@@ -91,10 +91,10 @@ db.query(`SELECT * FROM employee ORDER BY manager_id`, (err, result) => {
     runProgram;
 });
 //View employees by department.
-db.query(`SELECT employee.first_name, employee.last_name, department.name
-          FROM department
-          INNER JOIN role ON role.department_id = department.id
-          INNER JOIN employee ON employee.role_id = role.id;`, (err, result) => {
+db.query(`SELECT company_db.employee.first_name, company_db.employee.last_name, company_db.department.name AS Department
+          FROM company_db.department
+          INNER JOIN company_db.role ON company_db.role.department_id = company_db.department.id
+          INNER JOIN company_db.employee ON company_db.employee.role_id = company_db.role.id;`, (err, result) => {
     if (err) {
         console.log(err);
     }
@@ -127,9 +127,11 @@ db.query(`DELETE FROM employee WHERE id = ?`, ${}, (err, result) => {
     runProgram;
 });
 //View the total utilized budget of a department
-db.query(`SELECT role.salary AS Budget, department.name
-          FROM role
-          JOIN department ON role.department_id = department.id`, (err, result) => {
+db.query(`SELECT company_db.department.name AS Department,
+          SUM(company_db.role.salary) AS TotalBudget
+          FROM company_db.department
+          INNER JOIN company_db.role ON company_db.department.id = company_db.role.department_id
+          GROUP BY company_db.department.name;`, (err, result) => {
     if (err) {
         console.log(err);
     }
