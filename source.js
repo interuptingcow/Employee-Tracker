@@ -40,7 +40,7 @@ const runProgram = function () {
                 ]
             }
         ])
-        .then(({choice}) => {
+        .then(({ choice }) => {
             switch (choice) {
                 case 'View All Departments':
                     return viewAllDepartments();
@@ -114,6 +114,21 @@ const viewAllEmployees = () => {
 
 //add a department, 
 // const addDepartment = () => {
+
+//     inquirer
+//         .prompt([
+//             {
+//                 type: 'input',
+//                 name: 'firstName',
+//                 message: "What is the name of the department?",
+//             },
+//             {
+//                 type: 'input',
+//                 name: 'manager',
+//                 message: 'Who manages this department?',
+//                 choices:
+//             }
+//         ])
 //     db.query(`INSERT INTO department (name) VALUES (${})`, (err, result) => {
 //         if (err) {
 //             console.log(err);
@@ -135,15 +150,94 @@ const viewAllEmployees = () => {
 // };
 
 //add an employee, 
-// const addEmployee = () => {
-//     db.query(`INSERT INTO employee (first_name, Last_name, role_id, manager_id) VALUES (${})`, , (err, result) => {
-//         if (err) {
-//             console.log(err);
-//         }
-//         console.log(result);
-//         runProgram();
-//     });
-// };
+const addEmployee = () => {
+    let roleId;
+    let deptId;
+    const getDepartmentChoices = () => {
+        return new Promise((resolve, reject) => {
+            db.query('SELECT name FROM department', (err, results) => {
+                if (err) {
+                    console.error('Error fetching department names: ', err);
+                    reject(err);
+                } else {
+                    const departmentNames = results.map((department) => department.name);
+                    resolve(departmentNames);
+                }
+            });
+        });
+    };
+    const getRoleChoices = () => {
+        return new Promise((resolve, reject) => {
+            db.query('SELECT title FROM role', (err, results) => {
+                if (err) {
+                    console.error('Error fetching department names: ', err);
+                    reject(err);
+                } else {
+                    const roleNames = results.map((role) => role.title);
+                    resolve(roleNames);
+                }
+            });
+        });
+    };
+    const getUserInfo = async () => {
+        try {
+            const departmentChoices = await getDepartmentChoices();
+            const roleChoices = await getRoleChoices();
+    
+            const userInfo = await inquirer.prompt([
+            {
+                type: 'input',
+                name: 'firstName',
+                message: "What is the employee's first name?",
+            },
+            {
+                type: 'input',
+                name: 'lastName',
+                message: "What is the employee's last name?",
+            },
+            {
+                type: 'list',
+                name: 'role',
+                message: 'What is their role?',
+                choices: roleChoices,
+            },
+            {
+                type: 'list',
+                name: 'department',
+                message: 'What department are they in?',
+                choices: departmentChoices,
+            },
+        ]);
+        db.query(`SELECT id FROM role WHERE title='${userInfo.role}'`, (err, results) => {
+            if (err) {
+                console.log(err);
+            }
+            roleId = result;
+            return roleId
+        });
+        db.query(`SELECT id FROM department WHERE name='${userInfo.department}'`, (err, results) => {
+            if (err) {
+                console.log(err);
+            }
+            deptId = result;
+            return deptId
+        })
+        db.query(`INSERT INTO employee (first_name, last_name, role_id, manager_id) 
+                  VALUES ('${userInfo.firstName}', '${userInfo.lastName}', '${roleId}', '${deptId}')`, (err, result) => {
+            if (err) {
+                console.log(err);
+            }
+            console.log(result);
+            runProgram();
+        });
+    } catch (error) {
+        console.error('An error occurred: ', error);
+        runProgram();
+    }
+        
+}
+getUserInfo();
+};
 
 //update an employee role
 // const updateEmployee = () => {
