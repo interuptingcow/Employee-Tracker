@@ -183,60 +183,64 @@ const addEmployee = () => {
         try {
             const departmentChoices = await getDepartmentChoices();
             const roleChoices = await getRoleChoices();
-    
+
             const userInfo = await inquirer.prompt([
-            {
-                type: 'input',
-                name: 'firstName',
-                message: "What is the employee's first name?",
-            },
-            {
-                type: 'input',
-                name: 'lastName',
-                message: "What is the employee's last name?",
-            },
-            {
-                type: 'list',
-                name: 'role',
-                message: 'What is their role?',
-                choices: roleChoices,
-            },
-            {
-                type: 'list',
-                name: 'department',
-                message: 'What department are they in?',
-                choices: departmentChoices,
-            },
-        ]);
-        db.query(`SELECT id FROM role WHERE title='${userInfo.role}'`, (err, results) => {
-            if (err) {
-                console.log(err);
-            }
-            roleId = result;
-            return roleId
-        });
-        db.query(`SELECT id FROM department WHERE name='${userInfo.department}'`, (err, results) => {
-            if (err) {
-                console.log(err);
-            }
-            deptId = result;
-            return deptId
-        })
-        db.query(`INSERT INTO employee (first_name, last_name, role_id, manager_id) 
+                {
+                    type: 'input',
+                    name: 'firstName',
+                    message: "What is the employee's first name?",
+                },
+                {
+                    type: 'input',
+                    name: 'lastName',
+                    message: "What is the employee's last name?",
+                },
+                {
+                    type: 'list',
+                    name: 'role',
+                    message: 'What is their role?',
+                    choices: roleChoices,
+                },
+                {
+                    type: 'list',
+                    name: 'department',
+                    message: 'What department are they in?',
+                    choices: departmentChoices,
+                },
+            ]);
+            const queryAsync = (sql) => {
+                return new Promise((resolve, reject) => {
+                    db.query(sql, (err, results) => {
+                        if (err) {
+                            console.error('Database query error: ', err);
+                            reject(err);
+                        } else {
+                            resolve(results);
+                        }
+                    });
+                });
+            };
+            const roleIdResult = await queryAsync(`SELECT id FROM role WHERE title='${userInfo.role}'`)
+            roleId = roleIdResult[0].id;
+
+            const deptIdResult = await queryAsync(`SELECT id FROM department WHERE name='${userInfo.department}'`)
+            deptId = deptIdResult[0].id;
+
+            db.query(`INSERT INTO employee (first_name, last_name, role_id, manager_id) 
                   VALUES ('${userInfo.firstName}', '${userInfo.lastName}', '${roleId}', '${deptId}')`, (err, result) => {
-            if (err) {
-                console.log(err);
-            }
-            console.log(result);
+                if (err) {
+                    console.log(err);
+                }
+                console.log(result);
+                runProgram();
+            });
+        } catch (error) {
+            console.error('An error occurred: ', error);
             runProgram();
-        });
-    } catch (error) {
-        console.error('An error occurred: ', error);
-        runProgram();
+        }
+ 
     }
-        
-}
-getUserInfo();
+    getUserInfo();
 };
 
 //update an employee role
