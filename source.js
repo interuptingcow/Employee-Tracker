@@ -13,6 +13,64 @@ const db = mysql.createConnection(
     console.log(`Connected to the company_db database.`)
 );
 
+let roleId;
+let deptId;
+let eeId;
+let managerId;
+
+const getDepartmentChoices = () => {
+    return new Promise((resolve, reject) => {
+        db.query('SELECT name FROM department', (err, results) => {
+            if (err) {
+                console.error('Error fetching department names: ', err);
+                reject(err);
+            } else {
+                const departmentNames = results.map((department) => department.name);
+                resolve(departmentNames);
+            }
+        });
+    });
+};
+const getRoleChoices = () => {
+    return new Promise((resolve, reject) => {
+        db.query('SELECT title FROM role', (err, results) => {
+            if (err) {
+                console.error('Error fetching department names: ', err);
+                reject(err);
+            } else {
+                const roleNames = results.map((role) => role.title);
+                resolve(roleNames);
+            }
+        });
+    });
+};
+
+const getEmployeeChoices = () => {
+    return new Promise((resolve, reject) => {
+        db.query('SELECT first_name, last_name FROM employee', (err, results) => {
+            if (err) {
+                console.error('Error fetching employee names: ', err);
+                reject(err);
+            } else {
+                const employeeNames = results.map((employee) => `${employee.first_name} ${employee.last_name}`);
+                resolve(employeeNames);
+            }
+        });
+    });
+};
+
+const queryAsync = (sql) => {
+    return new Promise((resolve, reject) => {
+        db.query(sql, (err, results) => {
+            if (err) {
+                console.error('Database query error: ', err);
+                reject(err);
+            } else {
+                resolve(results);
+            }
+        });
+    });
+};
 
 const runProgram = function () {
     inquirer
@@ -55,7 +113,7 @@ const runProgram = function () {
                 case 'Add an Employee':
                     return addEmployee();
                 case 'Update an Employee Role':
-                    return updateEmployee();
+                    return updateEmployeeRole();
                 case 'Update Employee Manager':
                     return updateEmployeeManager();
                 case 'View Employees by Manager':
@@ -113,72 +171,83 @@ const viewAllEmployees = () => {
 }
 
 //add a department, 
-// const addDepartment = () => {
+const addDepartment = () => {
 
-//     inquirer
-//         .prompt([
-//             {
-//                 type: 'input',
-//                 name: 'firstName',
-//                 message: "What is the name of the department?",
-//             },
-//             {
-//                 type: 'input',
-//                 name: 'manager',
-//                 message: 'Who manages this department?',
-//                 choices:
-//             }
-//         ])
-//     db.query(`INSERT INTO department (name) VALUES (${})`, (err, result) => {
-//         if (err) {
-//             console.log(err);
-//         }
-//         console.log(result);
-//         runProgram();
-//     });
-// };
+    inquirer
+        .prompt([
+            {
+                type: 'input',
+                name: 'deptName',
+                message: "What is the name of the department?",
+            },
+
+        ])
+
+        .then((answers) => {
+            db.query(`INSERT INTO department (name) VALUES ('${answers.deptName}')`, (err, result) => {
+                if (err) {
+                    console.log(err);
+                }
+                console.log(result);
+                runProgram();
+            });
+        })
+};
 
 //add a role, 
-// const addRole = () => {
-//     db.query(`INSERT INTO role (title, salary, department_id) VALUES (${})`, (err, result) => {
-//         if (err) {
-//             console.log(err);
-//         }
-//         console.log(result);
-//         runProgram();
-//     });
-// };
+const addRole = () => {
+
+    getDepartmentChoices();
+
+    const getUserInfo = async () => {
+        try {
+            const departmentChoices = await getDepartmentChoices();
+
+
+            const userInfo = await inquirer.prompt([
+                {
+                    type: 'input',
+                    name: 'title',
+                    message: "What is the name of the new role?",
+                },
+                {
+                    type: 'input',
+                    name: 'salary',
+                    message: "What is the new role's salary?",
+                },
+                {
+                    type: 'list',
+                    name: 'department',
+                    message: 'What department is the new role in?',
+                    choices: departmentChoices,
+                },
+            ]);
+
+            const deptIdResult = await queryAsync(`SELECT id FROM department WHERE name='${userInfo.department}'`)
+            deptId = deptIdResult[0].id;
+
+            db.query(`INSERT INTO role (title, salary, department_id) 
+                  VALUES ('${userInfo.title}', '${userInfo.salary}', '${deptId}')`, (err, result) => {
+                if (err) {
+                    console.log(err);
+                }
+                console.log(result);
+                runProgram();
+            });
+        } catch (error) {
+            console.error('An error occurred: ', error);
+            runProgram();
+        }
+
+    }
+    getUserInfo();
+};
 
 //add an employee, 
 const addEmployee = () => {
-    let roleId;
-    let deptId;
-    const getDepartmentChoices = () => {
-        return new Promise((resolve, reject) => {
-            db.query('SELECT name FROM department', (err, results) => {
-                if (err) {
-                    console.error('Error fetching department names: ', err);
-                    reject(err);
-                } else {
-                    const departmentNames = results.map((department) => department.name);
-                    resolve(departmentNames);
-                }
-            });
-        });
-    };
-    const getRoleChoices = () => {
-        return new Promise((resolve, reject) => {
-            db.query('SELECT title FROM role', (err, results) => {
-                if (err) {
-                    console.error('Error fetching department names: ', err);
-                    reject(err);
-                } else {
-                    const roleNames = results.map((role) => role.title);
-                    resolve(roleNames);
-                }
-            });
-        });
-    };
+
+    getDepartmentChoices();
+    getRoleChoices();
     const getUserInfo = async () => {
         try {
             const departmentChoices = await getDepartmentChoices();
@@ -208,18 +277,7 @@ const addEmployee = () => {
                     choices: departmentChoices,
                 },
             ]);
-            const queryAsync = (sql) => {
-                return new Promise((resolve, reject) => {
-                    db.query(sql, (err, results) => {
-                        if (err) {
-                            console.error('Database query error: ', err);
-                            reject(err);
-                        } else {
-                            resolve(results);
-                        }
-                    });
-                });
-            };
+
             const roleIdResult = await queryAsync(`SELECT id FROM role WHERE title='${userInfo.role}'`)
             roleId = roleIdResult[0].id;
 
@@ -238,32 +296,103 @@ const addEmployee = () => {
             console.error('An error occurred: ', error);
             runProgram();
         }
- 
+
     }
     getUserInfo();
 };
 
 //update an employee role
-// const updateEmployee = () => {
-//     db.query(`UPDATE employee SET role = ${}`, (err, result) => {
-//         if (err) {
-//             console.log(err);
-//         }
-//         console.log(result);
-//         runProgram();
-//     });
-// };
+const updateEmployeeRole = () => {
+
+    getRoleChoices();
+    getEmployeeChoices();
+
+    const getUserInfo = async () => {
+        try {
+            const employeeChoices = await getEmployeeChoices();
+            const roleChoices = await getRoleChoices();
+
+            const userInfo = await inquirer.prompt([
+                {
+                    type: 'list',
+                    name: 'employeeName',
+                    message: "Choose employee to update role.",
+                    choices: employeeChoices,
+                },
+                {
+                    type: 'list',
+                    name: 'newRole',
+                    message: 'Please choose their new role.',
+                    choices: roleChoices,
+                },
+
+            ]);
+
+            const roleIdResult = await queryAsync(`SELECT id FROM role WHERE title='${userInfo.newRole}'`)
+            roleId = roleIdResult[0].id;
+
+            const eeIdResult = await queryAsync(`SELECT id FROM employee WHERE CONCAT(first_name, ' ', last_name)='${userInfo.employeeName}'`);
+            eeId = eeIdResult[0].id;
+
+            db.query(`UPDATE employee SET role_id = '${roleId}' WHERE id = '${eeId}'`, (err, result) => {
+                if (err) {
+                    console.log(err);
+                }
+                console.log(result);
+                runProgram();
+            });
+        } catch (error) {
+            console.error('An error occurred: ', error);
+            runProgram();
+        };
+    };
+    getUserInfo();
+}
 
 //Update employee managers.
-// const updateEmployeeManager = () => {
-//     db.query(`UPDATE employee SET manager_id = ${}`, (err, result) => {
-//         if (err) {
-//             console.log(err);
-//         }
-//         console.log(result);
-//         runProgram();
-//     });
-// };
+const updateEmployeeManager = () => {
+    getEmployeeChoices();
+
+    const getUserInfo = async () => {
+        try {
+            const employeeChoices = await getEmployeeChoices();
+
+            const userInfo = await inquirer.prompt([
+                {
+                    type: 'list',
+                    name: 'employeeName',
+                    message: "Choose employee to update manager.",
+                    choices: employeeChoices,
+                },
+                {
+                    type: 'list',
+                    name: 'newManager',
+                    message: 'Please choose their new manager.',
+                    choices: employeeChoices,
+                },
+
+            ]);
+
+            const eeIdResult = await queryAsync(`SELECT id FROM employee WHERE CONCAT(first_name, ' ', last_name)='${userInfo.employeeName}'`);
+            eeId = eeIdResult[0].id;
+
+            const managerIdResult = await queryAsync(`SELECT id FROM employee WHERE CONCAT(first_name, ' ', last_name)='${userInfo.newManager}'`);
+            managerId = managerIdResult[0].id;
+
+            db.query(`UPDATE employee SET manager_id = '${managerId}' WHERE id = '${eeId}'`, (err, result) => {
+                if (err) {
+                    console.log(err);
+                }
+                console.log(result);
+                runProgram();
+            });
+        } catch (error) {
+            console.error('An error occurred: ', error);
+            runProgram();
+        };
+    };
+    getUserInfo();
+};
 
 //View employees by manager.
 const viewEmployeesByManager = () => {
@@ -285,43 +414,152 @@ const viewEmployeesByDepartment = () => {
         if (err) {
             console.log(err);
         }
-        console.log(result)();
-        runProgram;
+        console.log(result);
+        runProgram();
     });
 };
 
 //Delete department
-// const deleteDepartment = () => {
-//     db.query(`DELETE FROM department WHERE id = ?`, ${}, (err, result) => {
-//         if (err) {
-//             console.log(err);
-//         }
-//         console.log(result);
-//         runProgram();
-//     });
-// };
+const deleteDepartment = () => {
+
+    getDepartmentChoices();
+
+    const getUserInfo = async () => {
+        try {
+            const departmentChoices = await getDepartmentChoices();
+
+
+            const userInfo = await inquirer.prompt([
+
+                {
+                    type: 'list',
+                    name: 'department',
+                    message: 'What department would you like to delete?',
+                    choices: departmentChoices,
+                },
+                {
+                    type: "confirm",
+                    name: "confirm",
+                    message: "Are you sure you want to delete this department?",
+                },
+            ]);
+
+            if (!userInfo.confirm) {
+                console.log("Process aborted");
+                runProgram();
+            } else {
+                const deptIdResult = await queryAsync(`SELECT id FROM department WHERE name='${userInfo.department}'`)
+                deptId = deptIdResult[0].id;
+
+                db.query(`DELETE FROM department WHERE id = '${deptId}'`, (err, result) => {
+                    if (err) {
+                        console.log(err);
+                    }
+                    console.log(result);
+                    runProgram();
+                });
+            }
+        } catch (error) {
+            console.error('An error occurred: ', error);
+            runProgram();
+        }
+    };
+    getUserInfo()
+};
 
 //Delete  role,
-// const deleteRole = () => {
-//     db.query(`DELETE FROM role WHERE id = ?`, ${}, (err, result) => {
-//         if (err) {
-//             console.log(err);
-//         }
-//         console.log(result);
-//         runProgram();
-//     });
-// };
+const deleteRole = () => {
+    getRoleChoices();
+
+    const getUserInfo = async () => {
+        try {
+            const roleChoices = await getRoleChoices();
+
+
+            const userInfo = await inquirer.prompt([
+
+                {
+                    type: 'list',
+                    name: 'role',
+                    message: 'What role would you like to delete?',
+                    choices: roleChoices,
+                },
+                {
+                    type: "confirm",
+                    name: "confirm",
+                    message: "Are you sure you want to delete this role?",
+                },
+            ]);
+
+            if (!userInfo.confirm) {
+                console.log("Process aborted");
+                runProgram();
+            } else {
+                const roleIdResult = await queryAsync(`SELECT id FROM role WHERE title='${userInfo.role}'`)
+                roleId = roleIdResult[0].id;
+
+                db.query(`DELETE FROM role WHERE id = '${roleId}'`, (err, result) => {
+                    if (err) {
+                        console.log(err);
+                    }
+                    console.log(result);
+                    runProgram();
+                });
+            }
+        } catch (error) {
+            console.error('An error occurred: ', error);
+            runProgram();
+        }
+    };
+    getUserInfo()
+};
 
 //Delete employees
-// const deleteEmployee = () => {
-//     db.query(`DELETE FROM employee WHERE id = ?`, ${}, (err, result) => {
-//         if (err) {
-//             console.log(err);
-//         }
-//         console.log(result);
-//         runProgram();
-//     });
-// };
+const deleteEmployee = () => {
+    getEmployeeChoices();
+
+    const getUserInfo = async () => {
+        try {
+            const employeeChoices = await getEmployeeChoices();
+
+
+            const userInfo = await inquirer.prompt([
+
+                {
+                    type: 'list',
+                    name: 'employee',
+                    message: 'What employee would you like to delete?',
+                    choices: employeeChoices,
+                },
+                {
+                    type: "confirm",
+                    name: "confirm",
+                    message: "Are you sure you want to delete this employee?",
+                },
+            ]);
+
+            if (!userInfo.confirm) {
+                console.log("Process aborted");
+                runProgram();
+            } else {
+                const eeIdResult = await queryAsync(`SELECT id FROM employee WHERE CONCAT(first_name, ' ', last_name)='${userInfo.employee}'`);
+                eeId = eeIdResult[0].id;
+
+                db.query(`DELETE FROM employee WHERE id = '${eeId}'`, (err, result) => {
+                    if (err) {
+                        console.log(err);
+                    }
+                    console.log(result);
+                    runProgram();
+                });
+            }
+        } catch (error) {
+            console.error('An error occurred: ', error);
+            runProgram();
+        }
+    };
+    getUserInfo()
+};
 
 //View the total utilized budget of a department
 const totalUtilBudgByDept = () => {
