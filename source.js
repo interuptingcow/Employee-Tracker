@@ -143,7 +143,7 @@ const viewAllDepartments = () => {
         if (err) {
             console.log(err);
         }
-        console.log(result);
+        console.table(result);
         runProgram();
     });
 };
@@ -154,7 +154,7 @@ const viewAllRoles = () => {
         if (err) {
             console.log(err);
         }
-        console.log(result);
+        console.table(result);
         runProgram();
     });
 };
@@ -165,7 +165,7 @@ const viewAllEmployees = () => {
         if (err) {
             console.log(err);
         }
-        console.log(result);
+        console.table(result);
         runProgram();
     });
 }
@@ -188,7 +188,7 @@ const addDepartment = () => {
                 if (err) {
                     console.log(err);
                 }
-                console.log(result);
+                console.log("Department added successfully");
                 runProgram();
             });
         })
@@ -231,7 +231,7 @@ const addRole = () => {
                 if (err) {
                     console.log(err);
                 }
-                console.log(result);
+                console.log("Role added successfully");
                 runProgram();
             });
         } catch (error) {
@@ -289,7 +289,7 @@ const addEmployee = () => {
                 if (err) {
                     console.log(err);
                 }
-                console.log(result);
+                console.log("Employee added successfully");
                 runProgram();
             });
         } catch (error) {
@@ -338,7 +338,7 @@ const updateEmployeeRole = () => {
                 if (err) {
                     console.log(err);
                 }
-                console.log(result);
+                console.log("Employee role updated successfully");
                 runProgram();
             });
         } catch (error) {
@@ -383,7 +383,7 @@ const updateEmployeeManager = () => {
                 if (err) {
                     console.log(err);
                 }
-                console.log(result);
+                console.log("Employee manager updated successfully");
                 runProgram();
             });
         } catch (error) {
@@ -400,7 +400,7 @@ const viewEmployeesByManager = () => {
         if (err) {
             console.log(err);
         }
-        console.log(result);
+        console.table(result);
         runProgram();
     });
 };
@@ -414,7 +414,7 @@ const viewEmployeesByDepartment = () => {
         if (err) {
             console.log(err);
         }
-        console.log(result);
+        console.table(result);
         runProgram();
     });
 };
@@ -455,7 +455,7 @@ const deleteDepartment = () => {
                     if (err) {
                         console.log(err);
                     }
-                    console.log(result);
+                    console.log("Department deleted successfully");
                     runProgram();
                 });
             }
@@ -502,7 +502,7 @@ const deleteRole = () => {
                     if (err) {
                         console.log(err);
                     }
-                    console.log(result);
+                    console.log("Role deleted successfully");
                     runProgram();
                 });
             }
@@ -549,7 +549,7 @@ const deleteEmployee = () => {
                     if (err) {
                         console.log(err);
                     }
-                    console.log(result);
+                    console.log("Employee deleted successfully");
                     runProgram();
                 });
             }
@@ -571,7 +571,7 @@ const totalUtilBudgByDept = () => {
         if (err) {
             console.log(err);
         }
-        console.log(result);
+        console.table(result);
         runProgram();
     });
 };
